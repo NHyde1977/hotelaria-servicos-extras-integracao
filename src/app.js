@@ -57,28 +57,6 @@ export async function buildApp(options = {}) {
     timestamp: new Date().toISOString()
   }));
 
-  app.post('/api/v1/auth/login', {
-    schema: {
-      tags: ['Autenticação'], security: [], summary: 'Gera um token para uso local',
-      body: {
-        type: 'object', additionalProperties: false, required: ['username', 'password'],
-        properties: {
-          username: { type: 'string', minLength: 1 },
-          password: { type: 'string', minLength: 1 }
-        }
-      }
-    }
-  }, async (request) => {
-    const user = config.authUsers.find((candidate) =>
-      candidate.username === request.body.username && candidate.password === request.body.password
-    );
-    if (!user) throw new AppError('Usuário ou senha inválidos', 401, 'INVALID_CREDENTIALS');
-    return {
-      token: app.jwt.sign({ sub: user.id, username: user.username, role: user.role }),
-      role: user.role
-    };
-  });
-
   const servicoRepository = new ServicoRepository(app.db);
   const disponibilidadeRepository = new DisponibilidadeRepository(app.db);
   const agendamentoRepository = new AgendamentoRepository(app.db);

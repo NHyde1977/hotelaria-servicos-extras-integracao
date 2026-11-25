@@ -4,21 +4,40 @@ import { AppError } from '../errors.js';
 import { config } from '../config.js';
 
 async function authPlugin(fastify) {
-  await fastify.register(jwt, { secret: config.jwtSecret });
+  await fastify.register(jwt, {
+    secret: config.jwtSecret,
+    verify: {
+      algorithms: ['HS256']
+    }
+  });
 
   fastify.decorate('authenticate', async function authenticate(request) {
     try {
       await request.jwtVerify();
     } catch {
-      throw new AppError('Token ausente ou inválido', 401, 'UNAUTHORIZED');
+      throw new AppError(
+        'Token ausente ou invalido',
+        401,
+        'UNAUTHORIZED'
+      );
     }
   });
 
   fastify.decorate('authorize', function authorize(...roles) {
     return async function authorizationHook(request) {
       await fastify.authenticate(request);
-      if (!roles.includes(request.user.role)) {
-        throw new AppError('Usuário sem permissão para esta operação', 403, 'FORBIDDEN');
+
+      const userRoles = request.user.roles;
+
+      if (
+        !Array.isArray(userRoles) ||
+        !userRoles.some(role => roles.includes(role))
+      ) {
+        throw new AppError(
+          'Usuario sem permissao para esta operacao',
+          403,
+          'FORBIDDEN'
+        );
       }
     };
   });
